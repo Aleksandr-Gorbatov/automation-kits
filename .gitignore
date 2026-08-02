@@ -1,0 +1,4 @@
+release/
+__pycache__/
+.scraper_state/
+*.pyc

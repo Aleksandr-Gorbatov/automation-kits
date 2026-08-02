@@ -1,0 +1,139 @@
+{
+  "name": "Doc-Pipeline (free tier): Email → Claude extraction → Google Sheet",
+  "nodes": [
+    {
+      "parameters": {
+        "format": "simple",
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "name": "Email Trigger (IMAP)",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2,
+      "position": [-420, 0],
+      "credentials": {},
+      "notesInFlow": true,
+      "notes": "Point this at the mailbox that receives orders/invoices. Create IMAP credentials in n8n → Credentials."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: 'claude-opus-4-8',\n  max_tokens: 1024,\n  messages: [{\n    role: 'user',\n    content: 'Extract the following fields from this email and reply with ONLY a JSON object, no prose: sender_company, document_type (invoice|order|request|other), document_number, date, total_amount, currency, items_summary (one line). If a field is missing use null.\\n\\nEMAIL SUBJECT: ' + $json.subject + '\\n\\nEMAIL BODY:\\n' + ($json.textPlain || $json.textHtml || '')\n  }]\n}) }}",
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000002",
+      "name": "Claude: extract fields",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-180, 0],
+      "notesInFlow": true,
+      "notes": "Set ANTHROPIC_API_KEY as an environment variable on your n8n instance (or replace with a Header Auth credential)."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Claude replies with a JSON object as text — parse it defensively.\n// Anything unparseable goes to the exceptions branch instead of being lost.\nconst out = [];\nfor (const item of $input.all()) {\n  const raw = item.json?.content?.[0]?.text ?? '';\n  try {\n    const m = raw.match(/\\{[\\s\\S]*\\}/);\n    if (!m) throw new Error('no JSON in model reply');\n    const data = JSON.parse(m[0]);\n    out.push({ json: { ok: true, ...data, raw_subject: $('Email Trigger (IMAP)').item.json.subject } });\n  } catch (e) {\n    out.push({ json: { ok: false, error: String(e), raw_reply: raw.slice(0, 500), raw_subject: $('Email Trigger (IMAP)').item.json.subject } });\n  }\n}\nreturn out;"
+      },
+      "id": "a1000000-0000-4000-8000-000000000003",
+      "name": "Parse model reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [60, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000004",
+      "name": "Extracted OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [300, 0]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": { "__rl": true, "mode": "list", "value": "" },
+        "sheetName": { "__rl": true, "mode": "list", "value": "" },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000005",
+      "name": "Append to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [540, -100],
+      "credentials": {},
+      "notesInFlow": true,
+      "notes": "Pick your spreadsheet and sheet after importing. Columns are auto-mapped from the extracted fields."
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": { "__rl": true, "mode": "list", "value": "" },
+        "sheetName": { "__rl": true, "mode": "list", "value": "" },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000006",
+      "name": "Exceptions sheet (nothing lost silently)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [540, 120],
+      "credentials": {},
+      "notesInFlow": true,
+      "notes": "Emails the model could not parse land here with the error — review them by hand."
+    }
+  ],
+  "connections": {
+    "Email Trigger (IMAP)": {
+      "main": [[ { "node": "Claude: extract fields", "type": "main", "index": 0 } ]]
+    },
+    "Claude: extract fields": {
+      "main": [[ { "node": "Parse model reply", "type": "main", "index": 0 } ]]
+    },
+    "Parse model reply": {
+      "main": [[ { "node": "Extracted OK?", "type": "main", "index": 0 } ]]
+    },
+    "Extracted OK?": {
+      "main": [
+        [ { "node": "Append to Google Sheet", "type": "main", "index": 0 } ],
+        [ { "node": "Exceptions sheet (nothing lost silently)", "type": "main", "index": 0 } ]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": { "templateCredsSetupCompleted": false }
+}
