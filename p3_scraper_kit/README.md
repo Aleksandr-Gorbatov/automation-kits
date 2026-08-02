@@ -12,6 +12,20 @@ from zero:
 - **`fetch()`** — exponential backoff with jitter on 429/5xx and network
   errors, honours `Retry-After`, sets an honest User-Agent.
 
+What it looks like in practice:
+
+```text
+$ python my_scraper.py
+got page 3739  [checkpoint saved]
+got page 3740  [checkpoint saved]
+^C  — killed mid-run
+$ python my_scraper.py
+resuming: 3 741 done, continuing at 3 742
+...
+$ python my_scraper.py     # next morning
+second run: 0 new items — delta working
+```
+
 ## Quick start
 
 ```bash
@@ -42,12 +56,35 @@ with Checkpoint("myjob") as cp:
 | | **Worked example 2**: scraping HTML cards with CSS selectors |
 | | **Adaptation guide** — point the kit at your site in ~1 hour |
 
-**Get the full kit:** https://nowpayments.io/payment/?iid=4330910215 (USDT).
+**Get the full kit:** https://nowpayments.io/payment/?iid=4330910215 (USDT) ·
+[all kits & how buying works](https://automation-kits.pages.dev/c/gh).
 Delivery by email within 24 hours of payment (usually much sooner) — I check payments
 personally, not a bot. Nothing after 24h? Email me the payment ID: immediate delivery
 or a full refund.
 
 Questions or a custom scraping task? → a.gorbatov80@gmail.com
+
+## FAQ
+
+**Why USDT and not a card?** Card checkout isn't available to me yet — the invoice
+page walks you through paying from any wallet or exchange. You always have my email
+and a receipt; the refund policy above applies either way.
+
+**Does it work with Selenium / Playwright?** The `Checkpoint` class is
+transport-agnostic — wrap any fetch loop with it. The built-in `fetch()` is
+`requests`-based; browser automation is out of scope on purpose (heavier, and
+most listing-type sites don't need it).
+
+**Python version?** 3.9+. Only dependency is `requests`.
+
+**Can I use it in client projects?** Yes — the full kit is licensed for any number
+of your own or client projects; redistribution/resale of the kit itself is not allowed.
+
+## Changelog
+
+- **2026-08-01** — v1.0: first public release (checkpoints + retry engine in the
+  free tier; snapshot-delta and two worked examples in the full kit).
+- **2026-08-02** — README: added terminal demo, FAQ, this changelog.
 
 ## Rules of the road
 
