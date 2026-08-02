@@ -38,9 +38,9 @@ adds idempotent execution — every email processed exactly once.
 | | **Idempotency** — runs twice, nobody gets duplicated |
 | | 20-minute setup guide for the whole chain |
 
-**Full kit — early access:** the packaged version ships this week. Email
-a.gorbatov80@gmail.com with subject "Doc-Pipeline full kit" and you get it first,
-at the launch price ($29, USDT).
+**Get the full kit:** https://nowpayments.io/payment/?iid=4648946085 ($29, USDT).
+Delivery by email within 24 hours of payment (usually much sooner). Nothing after
+24h? Email me the payment ID: immediate delivery or a full refund.
 
 Questions or a custom pipeline? → a.gorbatov80@gmail.com
 
