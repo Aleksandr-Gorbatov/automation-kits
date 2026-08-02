@@ -82,3 +82,30 @@ you get it first, at the launch price ($39, USDT).
 
 Need it adapted — different language, different trade, CRM integration?
 Custom work is available: a.gorbatov80@gmail.com
+
+More kits: [automation-kits storefront](https://automation-kits.pages.dev/c/gh)
+
+## FAQ
+
+**Does the crew need to install anything?** No — they text a Telegram bot like
+any other chat. Photos with a caption become an entry; photos without one attach
+to the crew member's last entry.
+
+**Where does the data live?** On your own VPS, in SQLite. Nothing goes to a
+third-party service except the text sent to the AI API for field mapping —
+and the vocabulary file lets you control exactly what's sent.
+
+**What does running it cost?** A $5/month VPS + AI API usage (a few cents per
+crew per day at typical volumes — one short text per report).
+
+**Which trades does the vocabulary cover?** Concrete, framing, electrical,
+plumbing, drywall, roofing out of the box — US (imperial) and UK (metric)
+variants included. It's one Python file; adding your trade's terms takes minutes.
+
+## Changelog
+
+- **2026-08-02** — English kit finalized (aiogram 3, US/UK vocabulary layers,
+  daily log + weekly rollup + photo index exports); early access open while the
+  live demo bot is being set up.
+- **2026-08-01** — teaser published; production pipeline (photo intake, SQLite
+  log, summaries) running daily on a live school build with 4 crews.
